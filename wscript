@@ -14,9 +14,11 @@ def configure(ctx):
     ctx.check_cfg(package='fontconfig', uselib_store='FTCFG', args=['--cflags', '--libs'])
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
+    ctx.recurse('slstatus')
 def options(opt):
     opt.load("compiler_c")
     # opt.check_cc()
 def build(ctx):
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
+    ctx.recurse('slstatus')

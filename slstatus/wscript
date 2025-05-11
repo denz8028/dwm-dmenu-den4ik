@@ -1,0 +1,31 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+from waflib import Utils
+import os
+
+top = '.'
+PROJECT_NAME = 'slstatus'
+install_path="/usr/bin"
+def options(opt):
+	return
+def configure(conf):
+	return
+def build(ctx):
+	source = [ 'slstatus.c', 'util.c'] + ctx.path.ant_glob('components/*.c')
+	includes = ['.', '/usr/include/freetype2']
+	libs = ['X11']
+	defines = ['_DEFAULT_SOURCE', 'VERSION=\"1.1"', 'XINERAMA']
+	cflags = ['-std=c99', '-pedantic', '-Wall', '-Wno-deprecated-declarations', '-Os', '-Wno-unused-parameter', '-Wextra']
+	ctx.program(
+		source   = source,
+		target   = PROJECT_NAME,
+		name     = PROJECT_NAME,
+		features = 'c',
+		includes = includes,
+		cflags = cflags,
+		defines  = defines,
+		use      = libs,
+		install_path = install_path,
+		# idx      = bld.get_taskgen_count()
+	)
