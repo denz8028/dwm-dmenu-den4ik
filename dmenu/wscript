@@ -1,0 +1,42 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+from waflib import Utils
+import os
+
+top = '.'
+PROJECT_NAME = 'dmenu'
+install_path="/usr/bin"
+
+def options(opt):
+	return
+def configure(conf):
+	return
+def build(ctx):
+	source = ['drw.c',
+			'dmenu.c',
+			# 'stest.c',
+			'util.c']
+	includes = ['.', '/usr/include/freetype2', '/usr/X11R6/include']
+	libs = ['X11', 'FTCFG', 'XFT', 'XINER']
+	defines = ['_DEFAULT_SOURCE', '_BSD_SOURCE', '_XOPEN_SOURCE=700L', '_POSIX_C_SOURCE=200809L', 'VERSION=\"5.3"', 'XINERAMA']
+	cflags = ['-std=c99', '-pedantic', '-Wall', '-Os']
+	scripts = ctx.path.ant_glob("scripts/*")
+	for script in scripts:
+		ctx.install_as(
+			dest="/usr/bin/" + script.name,
+			srcfile=script,
+			)
+	ctx.program(
+		source   = source,
+		target   = PROJECT_NAME,
+		name     = PROJECT_NAME,
+		features = 'c',
+		includes = includes,
+		cflags = cflags,
+		defines  = defines,
+		use      = libs,
+		install_path = install_path,
+		# idx      = bld.get_taskgen_count()
+	)
+
