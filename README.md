@@ -22,7 +22,7 @@ only 5 tags
 #### thanks to suckless patches!
 
 # Building:
-0. u need python for waf
+0. u need python for waf, and deps for dwm (pkg-config libxinerama-dev libxft-dev for debian)
 1. clone the repo.
 2. `./waf configure build`
 3. `sudo ./waf install`
