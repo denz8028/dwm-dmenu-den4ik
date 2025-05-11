@@ -26,6 +26,7 @@ def build(ctx):
 		ctx.install_as(
 			dest="/usr/bin/" + script.name,
 			srcfile=script,
+			chmod=0o755
 			)
 	ctx.program(
 		source   = source,
