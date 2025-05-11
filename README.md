@@ -3,7 +3,7 @@
 republished my own collection of dotfiles for dwm and dmenu in one repo.
 ## Mini-review
 
-#### slstatus required!
+#### feh required!
 dmenu at bottom\
 mod+o opens playerctl dmenu\
 my own wallpaper\
