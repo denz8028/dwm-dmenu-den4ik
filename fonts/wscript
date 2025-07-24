@@ -1,0 +1,32 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+from waflib import Utils
+import os
+import subprocess
+top = '.'
+PROJECT_NAME = 'fonts'
+install_path="/usr/local/share/fonts/"
+
+def options(opt):
+	return
+def configure(conf):
+	return
+def build(ctx):
+	fonts = ctx.path.ant_glob("*.ttf")
+	folder_path = "/usr/local/share/fonts/"
+	if not os.path.exists(folder_path):
+		os.makedirs(folder_path)
+	for font in fonts:
+		ctx.install_as(
+			dest="/usr/local/share/fonts/" + font.name,
+			srcfile=font,
+			)
+	proc = subprocess.run(["fc-cache"], encoding='utf-8', stdout=subprocess.PIPE)
+	for line in proc.stdout.split('\n'):
+		print(line)
+	ctx.program(
+		install_path = install_path,
+		features='c'
+		# idx      = bld.get_taskgen_count()
+	)

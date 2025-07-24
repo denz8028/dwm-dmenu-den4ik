@@ -15,6 +15,7 @@ def configure(ctx):
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
     ctx.recurse('slstatus')
+    ctx.recurse('fonts')
 def options(opt):
     opt.load("compiler_c")
     # opt.check_cc()
@@ -22,3 +23,4 @@ def build(ctx):
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
     ctx.recurse('slstatus')
+    ctx.recurse('fonts')
