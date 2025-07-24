@@ -6,7 +6,7 @@ import os
 
 top = '.'
 PROJECT_NAME = 'dmenu'
-install_path="/usr/bin"
+install_path="/usr/local/bin"
 
 def options(opt):
 	return
