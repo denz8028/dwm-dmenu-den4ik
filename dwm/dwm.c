@@ -36,6 +36,19 @@
 #include <X11/Xlib.h>
 #include <X11/Xproto.h>
 #include <X11/Xutil.h>
+#include <GL/glew.h>
+#include <math.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <sys/time.h>
+#include<GL/glx.h>
+#include<GL/glu.h>
+#include <pthread.h>
+#define STB_IMAGE_IMPLEMENTATION
+#define FRAME_LIMIT 60
+#define SHADER_WIDTH 1920
+#define SHADER_HEIGHT 1080
+
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
@@ -169,6 +182,7 @@ struct Systray {
 	Client *icons;
 };
 
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -283,7 +297,7 @@ static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
 static void autostart_exec(void);
-
+static void render_background(void);
 /* variables */
 static Systray *systray = NULL;
 static Client *prevclient = NULL;
@@ -323,9 +337,233 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static char* readShaderSource(const char* shaderFile);
+GLXContext              glc;
+GLint                   att[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
+XVisualInfo             *vi;
+double glfw_time;
+GLuint shaderProgram;
+GLint timeLocation;
+GLint resolutionLocation;
+GLint rLoc, gLoc, bLoc;
+int r,g,b;
+int frame;
+unsigned int VBO, VAO, EBO;
+static double last_time = 0.0;
+static float accumulated_time = 0.0f;
+const char*
+vertexShaderSource =
+	"#version 330 core\n"
+	"attribute vec2 aPosition;\n"
+	"out vec2 vUv;\n"
+	"void main()\n"
+	"{\n"
+	"vUv = aPosition * 0.5 + 0.5;\n"
+	"   gl_Position = vec4(aPosition, 0.0, 1.0);\n"
+	"}\0";
 
+
+
+char*
+readShaderSource(const char* shaderFile) {
+	FILE* file = fopen(shaderFile, "r");
+	if (!file) {
+		fprintf(stderr, "Failed to open shader file %s\n", shaderFile);
+		return NULL;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	char* shaderSource = (char*)malloc(length + 1);
+	if (!shaderSource) {
+		fprintf(stderr, "Failed to allocate memory for shader source\n");
+		fclose(file);
+		return NULL;
+	}
+
+	fread(shaderSource, 1, length, file);
+	shaderSource[length] = '\0';
+	fclose(file);
+
+	return shaderSource;
+}
 /* configuration, allows nested code to access above variables */
 #include "config.h"
+double
+get_time_in_seconds() {
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0;
+}
+
+void
+initGLSLWall( void )
+{
+	static int visual_attribs[] = {
+		GLX_RGBA,
+		GLX_DEPTH_SIZE, 24,
+		GLX_DOUBLEBUFFER,
+		None
+	};
+
+	XVisualInfo *vi = glXChooseVisual(dpy, 0, visual_attribs);
+	if (!vi) {
+		fprintf(stderr, "No matching GLX visual!\n");
+		return;
+	}
+
+	glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
+	if (!glc) {
+		fprintf(stderr, "Failed to create GLX context!\n");
+		return;
+	}
+	if (!glXMakeCurrent(dpy, root, glc)) {
+		fprintf(stderr, "glXMakeCurrent failed!\n");
+		return;
+	}
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW!\n");
+		return;
+	}
+	
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+	int success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		fprintf(stderr, "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
+	}
+
+	char* fragmentShaderSource = readShaderSource(gl_wallpaper);
+	if (!fragmentShaderSource) {
+		return;
+	}
+
+	// Fragment Shader
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	const GLchar* shaderSource = (const GLchar*)fragmentShaderSource; // Cast to correct type
+	glShaderSource(fragmentShader, 1, &shaderSource, NULL);
+	glCompileShader(fragmentShader);
+
+
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		fprintf(stderr, "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
+	}
+
+
+	shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		fprintf(stderr, "ERROR::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+	}
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+	free(fragmentShaderSource);
+
+	
+	float vertices[] = {
+		// positions
+		1.0f,  1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		-1.0f,  1.0f, 0.0f
+	};
+
+	unsigned int indices[] = {  // note that we start from 0!
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
+
+	
+
+	resolutionLocation = glGetUniformLocation(shaderProgram, "iResolution");
+	timeLocation = glGetUniformLocation(shaderProgram, "iTime");
+	rLoc = glGetUniformLocation(shaderProgram, "uR");
+	gLoc = glGetUniformLocation(shaderProgram, "uG");
+	bLoc = glGetUniformLocation(shaderProgram, "uB");
+
+	frame = 0;
+	XFlush(dpy);
+	
+}
+void render_background() {
+	if (!glXGetCurrentContext()) return;
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	int width, height;
+	width = DisplayWidth(dpy, DefaultScreen(dpy));
+	height = DisplayHeight(dpy, DefaultScreen(dpy));
+	glViewport(0, 0, width, height);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// Use the shader program
+	glUseProgram(shaderProgram);
+
+	// Update these variables once per second
+	if (frame == 0)
+	{
+		// init code (unused now btw, from glwall)
+	}
+	struct timespec current_time;
+	clock_gettime(CLOCK_MONOTONIC, &current_time);
+	double curtime = get_time_in_seconds();
+	float delta_time = (float)(curtime - last_time);
+	last_time = curtime;
+	accumulated_time += delta_time;
+	glfw_time = accumulated_time;
+	glUniform3f(resolutionLocation, (float)width, (float)height, 1.0f);
+	// glUniform4f(mouseLocation, (float)mouseX, (float)mouseY, (float)0.0, (float)0.0);
+	glUniform1f(timeLocation, glfw_time);
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glXSwapBuffers(dpy, root);  // Обновляем экран
+	XFlush(dpy);
+}
+void* glx_thread(void *arg) {
+	initGLSLWall();
+	while (1 == 1) {
+		render_background();
+		XFlush(dpy);
+		usleep(16000); // 60 fps
+	}
+	return NULL;
+}
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
@@ -2821,6 +3059,8 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan();
+	pthread_t thread;
+	pthread_create(&thread, NULL, glx_thread, NULL);
 	run();
 	cleanup();
 	XCloseDisplay(dpy);

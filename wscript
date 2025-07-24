@@ -12,6 +12,7 @@ def configure(ctx):
     ctx.check_cfg(package='xinerama', uselib_store='XINER', args=['--cflags', '--libs'])
     ctx.check_cfg(package='xft', uselib_store='XFT', args=['--cflags', '--libs'])
     ctx.check_cfg(package='fontconfig', uselib_store='FTCFG', args=['--cflags', '--libs'])
+    ctx.check_cfg(package='glew', uselib_store='GLEW', args=['--cflags', '--libs'])
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
     ctx.recurse('slstatus')
