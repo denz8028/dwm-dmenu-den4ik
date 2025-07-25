@@ -269,6 +269,7 @@ static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
+static void togglewallpaper(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void togglewin(const Arg *arg);
@@ -2489,6 +2490,14 @@ togglefullscr(const Arg *arg)
 {
 	if(selmon->sel)
 		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
+}
+void
+togglewallpaper(const Arg *arg)
+{
+	if (needToRender)
+		needToRender = 0;
+	else
+		needToRender = 1;
 }
 void
 toggleview(const Arg *arg)
