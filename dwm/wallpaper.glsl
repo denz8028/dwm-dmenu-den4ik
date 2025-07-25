@@ -5,9 +5,8 @@ uniform vec2 mouse;
 uniform float pulse1;
 uniform float pulse2;
 uniform float pulse3;
-uniform int uR;
-uniform int uG;
-uniform int uB;
+uniform vec3 uColor;
+uniform vec3 uColor2;
 varying vec2 vUv;
 
 vec3 lerp(vec3 color1, vec3 color2, float value) {
@@ -31,8 +30,8 @@ float waveColor(vec2 uv, float waveHeight, float maxHeight, float frequency, flo
 void main() {
     vec2 uv = vUv;
 
-    vec3 blue = vec3(0.118, 0.118, 0.18);
-    vec3 blue2 = vec3(0.118, 0.118, 0.18);
+    vec3 blue = uColor;
+    vec3 blue2 = uColor2;
     float amount = (uv.x + uv.y) / 2.0;
     vec3 bg = lerp(blue2, blue, amount);
 

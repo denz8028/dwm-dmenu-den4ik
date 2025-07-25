@@ -345,8 +345,24 @@ double glfw_time;
 GLuint shaderProgram;
 GLint timeLocation;
 GLint resolutionLocation;
+GLint glColor;
+GLint glColor2;
 GLint rLoc, gLoc, bLoc;
-int r,g,b;
+float glcolors[3];
+float glcolors2[3];
+void hexToVec3(const char* hex, float out_vec3[3]) {
+	if (hex[0] == '#') {
+		hex++;
+	}
+
+	uint32_t rgb;
+	sscanf(hex, "%06x", &rgb);
+
+	out_vec3[0] = ((rgb >> 16) & 0xFF) / 255.0f;
+	out_vec3[1] = ((rgb >> 8)  & 0xFF) / 255.0f;
+	out_vec3[2] = (rgb         & 0xFF) / 255.0f;
+}
+int needToRender = 1;
 int frame;
 unsigned int VBO, VAO, EBO;
 static double last_time = 0.0;
@@ -403,7 +419,7 @@ initGLSLWall( void )
 {
 	static int visual_attribs[] = {
 		GLX_RGBA,
-		GLX_DEPTH_SIZE, 24,
+		GLX_DEPTH_SIZE,24,
 		GLX_DOUBLEBUFFER,
 		None
 	};
@@ -517,7 +533,10 @@ initGLSLWall( void )
 	rLoc = glGetUniformLocation(shaderProgram, "uR");
 	gLoc = glGetUniformLocation(shaderProgram, "uG");
 	bLoc = glGetUniformLocation(shaderProgram, "uB");
-
+	glColor = glGetUniformLocation(shaderProgram, "uColor");
+	glColor2 = glGetUniformLocation(shaderProgram, "uColor2");
+	hexToVec3(col_gray1, glcolors);
+	hexToVec3(col_gray2, glcolors2);
 	frame = 0;
 	XFlush(dpy);
 	
@@ -549,6 +568,8 @@ void render_background() {
 	glfw_time = accumulated_time;
 	glUniform3f(resolutionLocation, (float)width, (float)height, 1.0f);
 	// glUniform4f(mouseLocation, (float)mouseX, (float)mouseY, (float)0.0, (float)0.0);
+	glUniform3f(glColor2, glcolors[0], glcolors[1], glcolors[2]);
+	glUniform3f(glColor, glcolors2[0], glcolors2[1], glcolors2[2]);
 	glUniform1f(timeLocation, glfw_time);
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -558,11 +579,10 @@ void render_background() {
 void* glx_thread(void *arg) {
 	initGLSLWall();
 	while (1 == 1) {
-		render_background();
-		XFlush(dpy);
+		if (needToRender)
+			render_background();
 		usleep(16000); // 60 fps
 	}
-	return NULL;
 }
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
