@@ -12,13 +12,15 @@ floating mode priority\
 only 5 tags\
 WAIT WHAT??? LIVE WALLPAPERS!!! (my own)
 
+you can view a list of wallpapers in dwm/glsl/ and choose in config.h
 ### patches:
 1. awesome taskbar
 2. fullscreen fix
 3. window focus fix
 4. systray
 5. powerline-dmenu
-6. glx-glsl-glew-bg
+6. refreshrate fix
+7. glx-glsl-glew-bg 
 
 #### thanks to suckless patches!
 

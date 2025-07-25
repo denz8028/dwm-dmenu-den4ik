@@ -367,16 +367,16 @@ int frame;
 unsigned int VBO, VAO, EBO;
 static double last_time = 0.0;
 static float accumulated_time = 0.0f;
-const char*
-vertexShaderSource =
-	"#version 330 core\n"
-	"attribute vec2 aPosition;\n"
-	"out vec2 vUv;\n"
-	"void main()\n"
-	"{\n"
-	"vUv = aPosition * 0.5 + 0.5;\n"
-	"   gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-	"}\0";
+// const char*
+// vertexShaderSource =
+// 	"#version 330 core\n"
+// 	"attribute vec2 aPosition;\n"
+// 	"out vec2 vUv;\n"
+// 	"void main()\n"
+// 	"{\n"
+// 	"vUv = aPosition * 0.5 + 0.5;\n"
+// 	"   gl_Position = vec4(aPosition, 0.0, 1.0);\n"
+// 	"}\0";
 
 
 
@@ -414,6 +414,67 @@ get_time_in_seconds() {
 	return (double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0;
 }
 
+void createRibbon() {
+	const int widthSegments = 64;
+	const int heightSegments = 32;
+	const float width = 3.0f;
+	const float height = 2.0f;
+
+	// Вершины
+	int vertexCount = (widthSegments + 1) * (heightSegments + 1);
+	float* vertices = (float*)malloc(vertexCount * 3 * sizeof(float));
+
+	int index = 0;
+	for (int iy = 0; iy <= heightSegments; iy++) {
+		float y = (float)iy / heightSegments * height - height / 2.0f;
+		for (int ix = 0; ix <= widthSegments; ix++) {
+			float x = (float)ix / widthSegments * width - width / 2.0f;
+			vertices[index++] = x;
+			vertices[index++] = y;
+			vertices[index++] = 0.0f;
+		}
+	}
+
+	int indexCount = widthSegments * heightSegments * 6;
+	unsigned int* indices = (unsigned int*)malloc(indexCount * sizeof(unsigned int));
+
+	index = 0;
+	for (int iy = 0; iy < heightSegments; iy++) {
+		for (int ix = 0; ix < widthSegments; ix++) {
+			unsigned int a = ix + (iy * (widthSegments + 1));
+			unsigned int b = a + 1;
+			unsigned int c = a + (widthSegments + 1);
+			unsigned int d = c + 1;
+
+			indices[index++] = a;
+			indices[index++] = b;
+			indices[index++] = c;
+
+			indices[index++] = b;
+			indices[index++] = d;
+			indices[index++] = c;
+		}
+	}
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	free(vertices);
+	free(indices);
+}
+
 void
 initGLSLWall( void )
 {
@@ -444,7 +505,7 @@ initGLSLWall( void )
 		fprintf(stderr, "Failed to initialize GLEW!\n");
 		return;
 	}
-	
+	const char *vertexShaderSource = readShaderSource(gl_wallpaper_vert);
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
@@ -456,7 +517,7 @@ initGLSLWall( void )
 		fprintf(stderr, "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
 	}
 
-	char* fragmentShaderSource = readShaderSource(gl_wallpaper);
+	char* fragmentShaderSource = readShaderSource(gl_wallpaper_frag);
 	if (!fragmentShaderSource) {
 		return;
 	}
@@ -492,41 +553,42 @@ initGLSLWall( void )
 	free(fragmentShaderSource);
 
 	
-	float vertices[] = {
-		// positions
-		1.0f,  1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
-		-1.0f,  1.0f, 0.0f
-	};
+	// float vertices[] = {
+	// 	// positions
+	// 	1.0f,  1.0f, 0.0f,
+	// 	1.0f, -1.0f, 0.0f,
+	// 	-1.0f, -1.0f, 0.0f,
+	// 	-1.0f,  1.0f, 0.0f
+	// };
 
-	unsigned int indices[] = {  // note that we start from 0!
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
-	};
+	// unsigned int indices[] = {  // note that we start from 0!
+	// 	0, 1, 3,   // first triangle
+	// 	1, 2, 3    // second triangle
+	// };
 
 
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
+	// glGenVertexArrays(1, &VAO);
+	// glGenBuffers(1, &VBO);
+	// glGenBuffers(1, &EBO);
+ //
+	// glBindVertexArray(VAO);
+ //
+	// glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+ //
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+ //
+ //
+	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// glEnableVertexAttribArray(0);
 
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+	createRibbon();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(0);
 
-	
 
 	resolutionLocation = glGetUniformLocation(shaderProgram, "iResolution");
 	timeLocation = glGetUniformLocation(shaderProgram, "iTime");
@@ -559,6 +621,11 @@ void render_background() {
 	{
 		// init code (unused now btw, from glwall)
 	}
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+	glClearColor(glcolors[0], glcolors[1], glcolors[2], 1.0f);  // Тёмный фон для контраста
+
 	struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 	double curtime = get_time_in_seconds();
@@ -571,8 +638,10 @@ void render_background() {
 	glUniform3f(glColor2, glcolors[0], glcolors[1], glcolors[2]);
 	glUniform3f(glColor, glcolors2[0], glcolors2[1], glcolors2[2]);
 	glUniform1f(timeLocation, glfw_time);
+
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
+
 	glXSwapBuffers(dpy, root);  // Обновляем экран
 	XFlush(dpy);
 }

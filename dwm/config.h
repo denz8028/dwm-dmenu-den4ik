@@ -25,7 +25,8 @@ static const char *colors[][3]      = {
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
 };
-const char gl_wallpaper[] = "/usr/local/share/dwm/wallpaper.glsl";
+const char gl_wallpaper_frag[] = "/usr/local/share/dwm/ps3xmbfrag.glsl";
+const char gl_wallpaper_vert[] = "/usr/local/share/dwm/ps3xmbvert.glsl";
 static const int sidepad            = 10;       /* horizontal padding of bar */
 static const int vertpad            = 10;       /* vertical padding of bar */
 static const char *const autostart[] = {

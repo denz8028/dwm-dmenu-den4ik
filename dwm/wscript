@@ -23,10 +23,13 @@ def build(ctx):
 		dest="/usr/local/share/dwm/background.png",
 		srcfile="background.png",
 		)
-	ctx.install_as(
-		dest="/usr/local/share/dwm/wallpaper.glsl",
-		srcfile="wallpaper.glsl",
-		)
+	walls = ctx.path.ant_glob("glsl/*")
+	wallpath="/usr/local/share/dwm/"
+	for wall in walls:
+		ctx.install_as(
+			dest=wallpath + wall.name,
+			srcfile=wall,
+			)
 	ctx.program(
 		source   = source,
 		target   = PROJECT_NAME,
