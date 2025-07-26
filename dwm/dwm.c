@@ -481,6 +481,7 @@ initGLSLWall( void )
 	static int visual_attribs[] = {
 		GLX_RGBA,
 		GLX_DEPTH_SIZE,24,
+		GLX_SAMPLES,       4,
 		GLX_DOUBLEBUFFER,
 		None
 	};
