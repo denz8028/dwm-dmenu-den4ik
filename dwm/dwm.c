@@ -2579,7 +2579,8 @@ togglewin(const Arg *arg)
 	if (c == selmon->sel) {
 		hidewin(c);
 		focus(NULL);
-		arrange(c->mon);
+		if (c)
+			arrange(c->mon);
 	} else {
 		if (HIDDEN(c))
 			showwin(c);
