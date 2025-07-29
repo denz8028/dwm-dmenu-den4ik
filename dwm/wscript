@@ -16,9 +16,9 @@ def build(ctx):
 			'dwm.c',
 			'util.c']
 	includes = ['.', '/usr/include/freetype2']
-	libs = ['X11', 'FTCFG', 'XFT', 'XINER', 'GLEW']
+	libs = ['X11', 'FTCFG', 'XFT', 'XINER', 'GLEW', 'slsutils']
 	defines = ['_DEFAULT_SOURCE', '_BSD_SOURCE', '_XOPEN_SOURCE=700L', 'VERSION=\"6.5"', 'XINERAMA']
-	cflags = ['-std=c99', '-pedantic', '-Wall', '-Wno-deprecated-declarations', '-Os']
+	cflags = ['-std=c99', '-pedantic', '-Wall', '-Wno-deprecated-declarations', '-g2', '-O1']
 	ctx.install_as(
 		dest="/usr/local/share/dwm/background.png",
 		srcfile="background.png",

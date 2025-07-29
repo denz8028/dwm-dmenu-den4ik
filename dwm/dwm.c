@@ -44,10 +44,28 @@
 #include<GL/glx.h>
 #include<GL/glu.h>
 #include <pthread.h>
+#include "slstatus.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define FRAME_LIMIT 60
 #define SHADER_WIDTH 1920
 #define SHADER_HEIGHT 1080
+
+
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#define NK_IMPLEMENTATION
+#define NK_XLIB_GL3_IMPLEMENTATION
+
+#include "nuklear.h"
+#include "nuklear_xlib_gl3.h"
+
+#define MAX_VERTEX_BUFFER 512 * 1024
+#define MAX_ELEMENT_BUFFER 128 * 1024
 
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
@@ -367,16 +385,6 @@ int frame;
 unsigned int VBO, VAO, EBO;
 static double last_time = 0.0;
 static float accumulated_time = 0.0f;
-// const char*
-// vertexShaderSource =
-// 	"#version 330 core\n"
-// 	"attribute vec2 aPosition;\n"
-// 	"out vec2 vUv;\n"
-// 	"void main()\n"
-// 	"{\n"
-// 	"vUv = aPosition * 0.5 + 0.5;\n"
-// 	"   gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-// 	"}\0";
 
 
 
@@ -553,37 +561,6 @@ initGLSLWall( void )
 	glDeleteShader(fragmentShader);
 	free(fragmentShaderSource);
 
-	
-	// float vertices[] = {
-	// 	// positions
-	// 	1.0f,  1.0f, 0.0f,
-	// 	1.0f, -1.0f, 0.0f,
-	// 	-1.0f, -1.0f, 0.0f,
-	// 	-1.0f,  1.0f, 0.0f
-	// };
-
-	// unsigned int indices[] = {  // note that we start from 0!
-	// 	0, 1, 3,   // first triangle
-	// 	1, 2, 3    // second triangle
-	// };
-
-
-	// glGenVertexArrays(1, &VAO);
-	// glGenBuffers(1, &VBO);
-	// glGenBuffers(1, &EBO);
- //
-	// glBindVertexArray(VAO);
- //
-	// glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
- //
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
- //
- //
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// glEnableVertexAttribArray(0);
-
 	createRibbon();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -603,6 +580,29 @@ initGLSLWall( void )
 	frame = 0;
 	XFlush(dpy);
 	
+}
+struct nk_font *eternalui_big;
+struct nk_context *ctx;
+struct nk_colorf bg;
+void nktest() {
+	if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
+		0))
+	{
+		struct nk_style *style = &ctx->style;
+
+		style->window.background = nk_rgba(100, 100, 100, 0);
+		nk_layout_row_static(ctx, 30, 80, 1);
+		nk_label(ctx, ram_free(0),NK_TEXT_LEFT);
+		nk_layout_row_dynamic(ctx, 20, 1);
+		size_t prog = (size_t)atoi(ram_perc(0));
+		nk_progress(ctx, &prog, 100, 1);
+		nk_label(ctx, "today is:", NK_TEXT_LEFT);
+		// nk_layout_row_dynamic(ctx, 25, 1);
+
+		nk_label(ctx, datetime("%c"),NK_TEXT_RIGHT);
+		// nk_label(ctx, "now playing:",NK_TEXT_RIGHT);
+	}
+	nk_end(ctx);
 }
 void render_background() {
 	if (!glXGetCurrentContext()) return;
@@ -642,12 +642,29 @@ void render_background() {
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
-
-	glXSwapBuffers(dpy, root);  // Обновляем экран
+	nktest();
+	nk_x11_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+	glXSwapBuffers(dpy, root);
 	XFlush(dpy);
 }
+
+
 void* glx_thread(void *arg) {
 	initGLSLWall();
+
+	bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 0.0f;
+	ctx = nk_x11_init(dpy, root);
+	{struct nk_font_atlas *atlas;
+		nk_x11_font_stash_begin(&atlas);
+		eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 32, 0);
+		/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
+		/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
+		/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
+		/*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
+		/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
+		nk_x11_font_stash_end();
+		/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
+		/*nk_style_set_font(ctx, &droid->handle);*/}
 	while (1 == 1) {
 		if (needToRender)
 			render_background();

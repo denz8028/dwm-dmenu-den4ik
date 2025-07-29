@@ -12,9 +12,9 @@ def options(opt):
 def configure(conf):
 	return
 def build(ctx):
-	source = [ 'slstatus.c', 'util.c'] + ctx.path.ant_glob('components/*.c')
+	source = [ 'slstatus.c', 'util.c']
 	includes = ['.', '/usr/include/freetype2']
-	libs = ['X11']
+	libs = ['X11', 'slsutils']
 	defines = ['_DEFAULT_SOURCE', 'VERSION=\"1.1"', 'XINERAMA']
 	cflags = ['-std=c99', '-pedantic', '-Wall', '-Wno-deprecated-declarations', '-Os', '-Wno-unused-parameter', '-Wextra']
 	ctx.program(
