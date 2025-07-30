@@ -240,17 +240,17 @@ nk_timestamp(void)
     return (long)((long)tv.tv_sec * 1000 + (long)tv.tv_usec/1000);
 }
 
+#ifdef NK_XLIB_LOAD_OPENGL_EXTENSIONS
+#include <GL/glx.h>
 NK_INTERN int
 nk_x11_stricmpn(const char *a, const char *b, int len)
 {
     int i = 0;
     for (i = 0; i < len && a[i] && b[i]; ++i)
         if (a[i] != b[i]) return 1;
-    if (i != len) return 1;
-    return 0;
+        if (i != len) return 1;
+        return 0;
 }
-#ifdef NK_XLIB_LOAD_OPENGL_EXTENSIONS
-#include <GL/glx.h>
 NK_INTERN int
 nk_x11_check_extension(struct opengl_info *GL, const char *ext)
 {
