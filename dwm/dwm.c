@@ -44,10 +44,28 @@
 #include<GL/glx.h>
 #include<GL/glu.h>
 #include <pthread.h>
+#include "slstatus.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define FRAME_LIMIT 60
 #define SHADER_WIDTH 1920
 #define SHADER_HEIGHT 1080
+
+
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#define NK_IMPLEMENTATION
+#define NK_XLIB_GL3_IMPLEMENTATION
+
+#include "nuklear.h"
+#include "nuklear_xlib_gl3.h"
+
+#define MAX_VERTEX_BUFFER 512 * 1024
+#define MAX_ELEMENT_BUFFER 128 * 1024
 
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
@@ -362,21 +380,14 @@ void hexToVec3(const char* hex, float out_vec3[3]) {
 	out_vec3[1] = ((rgb >> 8)  & 0xFF) / 255.0f;
 	out_vec3[2] = (rgb         & 0xFF) / 255.0f;
 }
+struct nk_font_atlas *atlas;
+struct nk_font *eternalui_big;
+struct nk_font *def;
 int needToRender = 1;
 int frame;
 unsigned int VBO, VAO, EBO;
 static double last_time = 0.0;
 static float accumulated_time = 0.0f;
-// const char*
-// vertexShaderSource =
-// 	"#version 330 core\n"
-// 	"attribute vec2 aPosition;\n"
-// 	"out vec2 vUv;\n"
-// 	"void main()\n"
-// 	"{\n"
-// 	"vUv = aPosition * 0.5 + 0.5;\n"
-// 	"   gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-// 	"}\0";
 
 
 
@@ -553,37 +564,6 @@ initGLSLWall( void )
 	glDeleteShader(fragmentShader);
 	free(fragmentShaderSource);
 
-	
-	// float vertices[] = {
-	// 	// positions
-	// 	1.0f,  1.0f, 0.0f,
-	// 	1.0f, -1.0f, 0.0f,
-	// 	-1.0f, -1.0f, 0.0f,
-	// 	-1.0f,  1.0f, 0.0f
-	// };
-
-	// unsigned int indices[] = {  // note that we start from 0!
-	// 	0, 1, 3,   // first triangle
-	// 	1, 2, 3    // second triangle
-	// };
-
-
-	// glGenVertexArrays(1, &VAO);
-	// glGenBuffers(1, &VBO);
-	// glGenBuffers(1, &EBO);
- //
-	// glBindVertexArray(VAO);
- //
-	// glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
- //
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
- //
- //
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// glEnableVertexAttribArray(0);
-
 	createRibbon();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -603,6 +583,31 @@ initGLSLWall( void )
 	frame = 0;
 	XFlush(dpy);
 	
+}
+struct nk_context *ctx;
+struct nk_colorf bg;
+void nktest() {
+	if (nk_begin(ctx, "Demo", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 150, 600, 150),
+		0))
+	{
+		struct nk_style *style;
+		struct nk_style_window *win;
+		NK_ASSERT(ctx);
+		if (!ctx) return;
+		style = &ctx->style;
+		win = &style->window;
+
+		win->background = nk_rgba(100, 255, 100, 0);
+		win->fixed_background = nk_style_item_color(nk_rgba(100, 100, 100, 0));
+		nk_style_set_font(ctx, &eternalui_big->handle);
+		nk_layout_row_static(ctx, 30, 550, 1);
+		nk_label(ctx, datetime_dayoftheweek(0),NK_TEXT_CENTERED);
+		// nk_layout_row_static(ctx, 30, 500, 1);
+		nk_layout_row_static(ctx, 60, 550, 2);
+		nk_style_set_font(ctx, &def->handle);
+		nk_label(ctx, datetime("%x %T"),NK_TEXT_CENTERED);
+	}
+	nk_end(ctx);
 }
 void render_background() {
 	if (!glXGetCurrentContext()) return;
@@ -642,12 +647,29 @@ void render_background() {
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
-
-	glXSwapBuffers(dpy, root);  // Обновляем экран
+	nktest();
+	nk_x11_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+	glXSwapBuffers(dpy, root);
 	XFlush(dpy);
 }
+
+
 void* glx_thread(void *arg) {
 	initGLSLWall();
+
+	bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 0.0f;
+	ctx = nk_x11_init(dpy, root);
+	{
+		nk_x11_font_stash_begin(&atlas);
+		eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 64, 0);
+		def = nk_font_atlas_add_default(atlas, 24, 0);
+		/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
+		/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
+		/*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
+		/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
+		nk_x11_font_stash_end();
+		/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
+		nk_style_set_font(ctx, &eternalui_big->handle);}
 	while (1 == 1) {
 		if (needToRender)
 			render_background();
@@ -2579,7 +2601,8 @@ togglewin(const Arg *arg)
 	if (c == selmon->sel) {
 		hidewin(c);
 		focus(NULL);
-		arrange(c->mon);
+		if (c)
+			arrange(c->mon);
 	} else {
 		if (HIDDEN(c))
 			showwin(c);

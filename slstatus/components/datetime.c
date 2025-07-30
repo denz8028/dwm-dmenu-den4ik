@@ -18,3 +18,42 @@ datetime(const char *fmt)
 
 	return buf;
 }
+int dayofweek(time_t now, int tz_offset) {
+	// Calculate number of seconds since midnight 1 Jan 1970 local time
+	time_t localtime = now + (tz_offset * 60 * 60);
+	// Convert to number of days since 1 Jan 1970
+	int days_since_epoch = localtime / 86400;
+	// 1 Jan 1970 was a Thursday, so add 4 so Sunday is day 0, and mod 7
+	int day_of_week = (days_since_epoch + 4) % 7;
+
+	return day_of_week;
+}
+const char *
+datetime_dayoftheweek(const char *unused)
+{
+	time_t t;
+
+	t = time(NULL);
+	// if (!strftime(buf, sizeof(buf), fmt, localtime(&t))) {
+	// 	warn("strftime: Result string exceeds buffer size");
+	// 	return NULL;
+	// }
+	int dotw = dayofweek(t, -7);
+	switch (dotw) {
+		case 1:
+			return "Monday";
+		case 2:
+			return "Tuesday";
+		case 3:
+			return "Wednesday";
+		case 4:
+			return "Thursday";
+		case 5:
+			return "Friday";
+		case 6:
+			return "Saturday";
+		case 7:
+			return "Sunday";
+	}
+	return "idk lol";
+}

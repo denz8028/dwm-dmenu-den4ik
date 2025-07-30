@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-
 top = '.'
-out = 'build_directory'
+out = 'build'
 
 def configure(ctx):
     ctx.load('compiler_c')
+    ctx.load('compiler_cxx')
+    ctx.load('clang_compilation_database', tooldir='wafscripts')
     ctx.load('gnu_dirs')
     ctx.check_cc(msg="Checking for C compiler", mandatory=True)
     ctx.check_cfg(package='x11', uselib_store='X11', args=['--cflags', '--libs'])
@@ -15,13 +16,19 @@ def configure(ctx):
     ctx.check_cfg(package='glew', uselib_store='GLEW', args=['--cflags', '--libs'])
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
+    ctx.recurse('slstatus/components')
     ctx.recurse('slstatus')
     ctx.recurse('fonts')
+    ctx.recurse('nuklear')
 def options(opt):
     opt.load("compiler_c")
+    opt.load('compiler_cxx')
+    opt.load('clang_compilation_database', tooldir='wafscripts')
     # opt.check_cc()
 def build(ctx):
     ctx.recurse('dwm')
     ctx.recurse('dmenu')
+    ctx.recurse('slstatus/components')
     ctx.recurse('slstatus')
     ctx.recurse('fonts')
+    ctx.recurse('nuklear')
