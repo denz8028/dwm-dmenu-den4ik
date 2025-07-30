@@ -19,6 +19,7 @@ def configure(ctx):
     ctx.recurse('slstatus/components')
     ctx.recurse('slstatus')
     ctx.recurse('fonts')
+    ctx.recurse('nuklear')
 def options(opt):
     opt.load("compiler_c")
     opt.load('compiler_cxx')
@@ -30,3 +31,4 @@ def build(ctx):
     ctx.recurse('slstatus/components')
     ctx.recurse('slstatus')
     ctx.recurse('fonts')
+    ctx.recurse('nuklear')

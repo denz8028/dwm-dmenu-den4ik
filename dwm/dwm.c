@@ -656,7 +656,7 @@ void* glx_thread(void *arg) {
 	ctx = nk_x11_init(dpy, root);
 	{struct nk_font_atlas *atlas;
 		nk_x11_font_stash_begin(&atlas);
-		eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 32, 0);
+		// eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 32, 0);
 		/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
 		/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
 		/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/

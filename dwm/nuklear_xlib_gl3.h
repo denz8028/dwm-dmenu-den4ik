@@ -14,6 +14,7 @@
 #define NK_XLIB_GL3_H_
 
 #include <X11/Xlib.h>
+#include <assert.h>
 NK_API struct nk_context*   nk_x11_init(Display *dpy, Window win);
 NK_API void                 nk_x11_font_stash_begin(struct nk_font_atlas **atlas);
 NK_API void                 nk_x11_font_stash_end(void);
@@ -24,6 +25,7 @@ NK_API int                  nk_x11_device_create(void);
 NK_API void                 nk_x11_device_destroy(void);
 
 #endif
+
 /*
  * ==============================================================
  *
@@ -31,6 +33,32 @@ NK_API void                 nk_x11_device_destroy(void);
  *
  * ===============================================================
  */
+#ifndef NK_ASSERT
+#include <assert.h>
+#define NK_ASSERT(expr) assert(expr)
+#endif
+
+#ifndef NK_MEMSET
+#define NK_MEMSET memset
+#endif
+#ifndef NK_MEMCPY
+#define NK_MEMCPY nk_memcopy
+#endif
+#ifndef NK_SQRT
+#define NK_SQRT nk_sqrt
+#endif
+#ifndef NK_SIN
+#define NK_SIN nk_sin
+#endif
+#ifndef NK_COS
+#define NK_COS nk_cos
+#endif
+#ifndef NK_STRTOD
+#define NK_STRTOD nk_strtod
+#endif
+#ifndef NK_DTOA
+#define NK_DTOA nk_dtoa
+#endif
 #ifdef NK_XLIB_GL3_IMPLEMENTATION
 #include <stdio.h>
 #include <stdlib.h>
