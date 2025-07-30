@@ -380,6 +380,9 @@ void hexToVec3(const char* hex, float out_vec3[3]) {
 	out_vec3[1] = ((rgb >> 8)  & 0xFF) / 255.0f;
 	out_vec3[2] = (rgb         & 0xFF) / 255.0f;
 }
+struct nk_font_atlas *atlas;
+struct nk_font *eternalui_big;
+struct nk_font *def;
 int needToRender = 1;
 int frame;
 unsigned int VBO, VAO, EBO;
@@ -581,26 +584,28 @@ initGLSLWall( void )
 	XFlush(dpy);
 	
 }
-struct nk_font *eternalui_big;
 struct nk_context *ctx;
 struct nk_colorf bg;
 void nktest() {
-	if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
+	if (nk_begin(ctx, "Demo", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 150, 600, 150),
 		0))
 	{
-		struct nk_style *style = &ctx->style;
+		struct nk_style *style;
+		struct nk_style_window *win;
+		NK_ASSERT(ctx);
+		if (!ctx) return;
+		style = &ctx->style;
+		win = &style->window;
 
-		style->window.background = nk_rgba(100, 100, 100, 0);
-		nk_layout_row_static(ctx, 30, 80, 1);
-		nk_label(ctx, ram_free(0),NK_TEXT_LEFT);
-		nk_layout_row_dynamic(ctx, 20, 1);
-		size_t prog = (size_t)atoi(ram_perc(0));
-		nk_progress(ctx, &prog, 100, 1);
-		nk_label(ctx, "today is:", NK_TEXT_LEFT);
-		// nk_layout_row_dynamic(ctx, 25, 1);
-
-		nk_label(ctx, datetime("%c"),NK_TEXT_RIGHT);
-		// nk_label(ctx, "now playing:",NK_TEXT_RIGHT);
+		win->background = nk_rgba(100, 255, 100, 0);
+		win->fixed_background = nk_style_item_color(nk_rgba(100, 100, 100, 0));
+		nk_style_set_font(ctx, &eternalui_big->handle);
+		nk_layout_row_static(ctx, 30, 550, 1);
+		nk_label(ctx, datetime_dayoftheweek(0),NK_TEXT_CENTERED);
+		// nk_layout_row_static(ctx, 30, 500, 1);
+		nk_layout_row_static(ctx, 60, 550, 2);
+		nk_style_set_font(ctx, &def->handle);
+		nk_label(ctx, datetime("%x %T"),NK_TEXT_CENTERED);
 	}
 	nk_end(ctx);
 }
@@ -654,17 +659,17 @@ void* glx_thread(void *arg) {
 
 	bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 0.0f;
 	ctx = nk_x11_init(dpy, root);
-	{struct nk_font_atlas *atlas;
+	{
 		nk_x11_font_stash_begin(&atlas);
-		// eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 32, 0);
-		/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
+		eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 64, 0);
+		def = nk_font_atlas_add_default(atlas, 24, 0);
 		/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
 		/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
 		/*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
 		/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
 		nk_x11_font_stash_end();
 		/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
-		/*nk_style_set_font(ctx, &droid->handle);*/}
+		nk_style_set_font(ctx, &eternalui_big->handle);}
 	while (1 == 1) {
 		if (needToRender)
 			render_background();

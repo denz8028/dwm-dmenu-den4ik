@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 top = '.'
-out = 'build_directory'
+out = 'build'
 
 def configure(ctx):
     ctx.load('compiler_c')

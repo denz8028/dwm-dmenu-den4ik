@@ -14,7 +14,7 @@ const char *cpu_perc(const char *unused);
 
 /* datetime */
 const char *datetime(const char *fmt);
-
+const char *datetime_dayoftheweek(const char *unused);
 /* disk */
 const char *disk_free(const char *path);
 const char *disk_perc(const char *path);
