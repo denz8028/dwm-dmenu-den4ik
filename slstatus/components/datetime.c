@@ -31,15 +31,11 @@ int dayofweek(time_t now, int tz_offset) {
 const char *
 datetime_dayoftheweek(const char *unused)
 {
-	time_t t;
-
-	t = time(NULL);
-	// if (!strftime(buf, sizeof(buf), fmt, localtime(&t))) {
-	// 	warn("strftime: Result string exceeds buffer size");
-	// 	return NULL;
-	// }
+	time_t t = time(NULL);
 	int dotw = dayofweek(t, -7);
 	switch (dotw) {
+		case 0:
+			return "Sunday";
 		case 1:
 			return "Monday";
 		case 2:
@@ -52,8 +48,6 @@ datetime_dayoftheweek(const char *unused)
 			return "Friday";
 		case 6:
 			return "Saturday";
-		case 7:
-			return "Sunday";
 	}
 	return "idk lol";
 }
