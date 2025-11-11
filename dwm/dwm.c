@@ -570,7 +570,7 @@ initGLSLWall( void )
 }
 struct nk_context *ctx;
 struct nk_colorf bg;
-void nktest() {
+void nkclock() {
 	if (nk_begin(ctx, "Demo", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 150, 600, 150),
 		0))
 	{
@@ -628,7 +628,7 @@ void render_background() {
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
-	nktest();
+	nkclock();
 	nk_x11_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
 	glXSwapBuffers(dpy, root);
 	XFlush(dpy);
