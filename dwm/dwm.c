@@ -368,25 +368,15 @@ GLint glColor2;
 GLint rLoc, gLoc, bLoc;
 float glcolors[3];
 float glcolors2[3];
-void hexToVec3(const char* hex, float out_vec3[3]) {
-	if (hex[0] == '#') {
-		hex++;
-	}
-
-	uint32_t rgb;
-	sscanf(hex, "%06x", &rgb);
-
-	out_vec3[0] = ((rgb >> 16) & 0xFF) / 255.0f;
-	out_vec3[1] = ((rgb >> 8)  & 0xFF) / 255.0f;
-	out_vec3[2] = (rgb         & 0xFF) / 255.0f;
-}
 struct nk_font_atlas *atlas;
-struct nk_font *eternalui_big;
+struct nk_font *anurati_bold;
+struct nk_font *dmmono_regular;
 struct nk_font *def;
 int needToRender = 1;
+
 int frame;
 unsigned int VBO, VAO, EBO;
-static double last_time = 0.0;
+static float last_time = 0.0;
 static float accumulated_time = 0.0f;
 
 
@@ -418,12 +408,7 @@ readShaderSource(const char* shaderFile) {
 }
 /* configuration, allows nested code to access above variables */
 #include "config.h"
-double
-get_time_in_seconds() {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0;
-}
+
 
 void createRibbon() {
 	const int widthSegments = 64;
@@ -431,7 +416,6 @@ void createRibbon() {
 	const float width = 3.0f;
 	const float height = 2.0f;
 
-	// Вершины
 	int vertexCount = (widthSegments + 1) * (heightSegments + 1);
 	float* vertices = (float*)malloc(vertexCount * 3 * sizeof(float));
 
@@ -553,7 +537,7 @@ initGLSLWall( void )
 	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
 
-	
+
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
@@ -582,7 +566,7 @@ initGLSLWall( void )
 	hexToVec3(col_gray2, glcolors2);
 	frame = 0;
 	XFlush(dpy);
-	
+
 }
 struct nk_context *ctx;
 struct nk_colorf bg;
@@ -599,12 +583,12 @@ void nktest() {
 
 		win->background = nk_rgba(100, 255, 100, 0);
 		win->fixed_background = nk_style_item_color(nk_rgba(100, 100, 100, 0));
-		nk_style_set_font(ctx, &eternalui_big->handle);
-		nk_layout_row_static(ctx, 30, 550, 1);
+		nk_style_set_font(ctx, &anurati_bold->handle);
+		nk_layout_row_static(ctx, 45, 550, 1);
 		nk_label(ctx, datetime_dayoftheweek(0),NK_TEXT_CENTERED);
 		// nk_layout_row_static(ctx, 30, 500, 1);
 		nk_layout_row_static(ctx, 60, 550, 2);
-		nk_style_set_font(ctx, &def->handle);
+		nk_style_set_font(ctx, &dmmono_regular->handle);
 		nk_label(ctx, datetime("%x %T"),NK_TEXT_CENTERED);
 	}
 	nk_end(ctx);
@@ -632,18 +616,15 @@ void render_background() {
 	glDisable(GL_DEPTH_TEST);
 	glClearColor(glcolors[0], glcolors[1], glcolors[2], 1.0f);  // Тёмный фон для контраста
 
-	struct timespec current_time;
-	clock_gettime(CLOCK_MONOTONIC, &current_time);
-	double curtime = get_time_in_seconds();
-	float delta_time = (float)(curtime - last_time);
+	float curtime = get_time_in_seconds();
+	float delta_time = (curtime - last_time);
 	last_time = curtime;
 	accumulated_time += delta_time;
-	glfw_time = accumulated_time;
 	glUniform3f(resolutionLocation, (float)width, (float)height, 1.0f);
 	// glUniform4f(mouseLocation, (float)mouseX, (float)mouseY, (float)0.0, (float)0.0);
 	glUniform3f(glColor2, glcolors[0], glcolors[1], glcolors[2]);
 	glUniform3f(glColor, glcolors2[0], glcolors2[1], glcolors2[2]);
-	glUniform1f(timeLocation, glfw_time);
+	glUniform1f(timeLocation, accumulated_time);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
@@ -661,7 +642,8 @@ void* glx_thread(void *arg) {
 	ctx = nk_x11_init(dpy, root);
 	{
 		nk_x11_font_stash_begin(&atlas);
-		eternalui_big = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/eternalui_bold.ttf", 64, 0);
+		anurati_bold = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/anurati-bold.ttf", 64, 0);
+		dmmono_regular = nk_font_atlas_add_from_file(atlas, "/usr/local/share/fonts/dmmono.ttf", 24, 0);
 		def = nk_font_atlas_add_default(atlas, 24, 0);
 		/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
 		/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
@@ -669,7 +651,7 @@ void* glx_thread(void *arg) {
 		/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
 		nk_x11_font_stash_end();
 		/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
-		nk_style_set_font(ctx, &eternalui_big->handle);}
+		nk_style_set_font(ctx, &anurati_bold->handle);}
 	while (1 == 1) {
 		if (needToRender)
 			render_background();
@@ -943,6 +925,8 @@ cleanup(void)
 	for (i = 0; i < LENGTH(colors); i++)
 		free(scheme[i]);
 	free(scheme);
+	glXDestroyContext(dpy, glXGetCurrentContext());
+	accumulated_time = 0.0f;
 	XDestroyWindow(dpy, wmcheckwin);
 	drw_free(drw);
 	XSync(dpy, False);
@@ -2302,7 +2286,7 @@ setup(void)
 	updategeom();
 	sp = sidepad;
 	vp = (topbar == 1) ? vertpad : - vertpad;
-
+	accumulated_time = 0.0f;
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);
 	wmatom[WMProtocols] = XInternAtom(dpy, "WM_PROTOCOLS", False);
@@ -2578,8 +2562,10 @@ togglewallpaper(const Arg *arg)
 {
 	if (needToRender)
 		needToRender = 0;
-	else
-		needToRender = 1;
+	else {
+	    needToRender = 1;
+		accumulated_time = 0.0f;
+	}
 }
 void
 toggleview(const Arg *arg)
@@ -3178,4 +3164,3 @@ main(int argc, char *argv[])
 	XCloseDisplay(dpy);
 	return EXIT_SUCCESS;
 }
-

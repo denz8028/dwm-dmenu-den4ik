@@ -5,4 +5,6 @@
 #define BETWEEN(X, A, B)        ((A) <= (X) && (X) <= (B))
 
 void die(const char *fmt, ...);
+void hexToVec3(const char* hex, float out_vec3[3]);
+double get_time_in_seconds();
 void *ecalloc(size_t nmemb, size_t size);
