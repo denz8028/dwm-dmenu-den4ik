@@ -373,7 +373,7 @@ struct nk_font *anurati_bold;
 struct nk_font *dmmono_regular;
 struct nk_font *def;
 int needToRender = 1;
-
+pthread_t thread;
 int frame;
 unsigned int VBO, VAO, EBO;
 static float last_time = 0.0;
@@ -571,7 +571,7 @@ initGLSLWall( void )
 struct nk_context *ctx;
 struct nk_colorf bg;
 void nkclock() {
-	if (nk_begin(ctx, "Demo", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 150, 600, 150),
+	if (nk_begin(ctx, "clock", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 150, 600, 150),
 		0))
 	{
 		struct nk_style *style;
@@ -590,6 +590,29 @@ void nkclock() {
 		nk_layout_row_static(ctx, 60, 550, 2);
 		nk_style_set_font(ctx, &dmmono_regular->handle);
 		nk_label(ctx, datetime("%x %T"),NK_TEXT_CENTERED);
+	}
+	nk_end(ctx);
+}
+void nkmusic() {
+    if (nk_begin(ctx, "music", nk_rect(((DisplayWidth(dpy, DefaultScreen(dpy)) / 2) - (600 /2)), 250, 600, 150),
+		0))
+	{
+		struct nk_style *style;
+		struct nk_style_window *win;
+		NK_ASSERT(ctx);
+		if (!ctx) return;
+		style = &ctx->style;
+		win = &style->window;
+
+		win->background = nk_rgba(100, 255, 100, 0);
+		win->fixed_background = nk_style_item_color(nk_rgba(100, 100, 100, 0));
+		nk_style_set_font(ctx, &dmmono_regular->handle);
+		nk_layout_row_static(ctx, 25, 550, 1);
+		nk_label(ctx, get_artist(0) ,NK_TEXT_CENTERED);
+		// nk_layout_row_static(ctx, 30, 500, 1);
+		nk_layout_row_static(ctx, 60, 550, 2);
+		// nk_style_set_font(ctx, &dmmono_regular->handle);
+		// nk_label(ctx, datetime("%x %T"),NK_TEXT_CENTERED);
 	}
 	nk_end(ctx);
 }
@@ -629,6 +652,7 @@ void render_background() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 128 * 32 * 6, GL_UNSIGNED_INT, 0);
 	nkclock();
+	nkmusic();
 	nk_x11_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
 	glXSwapBuffers(dpy, root);
 	XFlush(dpy);
@@ -657,6 +681,8 @@ void* glx_thread(void *arg) {
 			render_background();
 		usleep(16000); // 60 fps
 	}
+
+	pthread_exit(NULL);
 }
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
@@ -932,7 +958,10 @@ cleanup(void)
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
 	XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
-}
+	free(ctx);
+	free(glXGetCurrentContext());
+	pthread_exit(&thread);
+	}
 
 void
 cleanupmon(Monitor *mon)
@@ -3157,10 +3186,10 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan();
-	pthread_t thread;
 	pthread_create(&thread, NULL, glx_thread, NULL);
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
+	pthread_exit(&thread);
 	return EXIT_SUCCESS;
 }

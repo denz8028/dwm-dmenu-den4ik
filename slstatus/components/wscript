@@ -13,9 +13,9 @@ def configure(conf):
 def build(ctx):
     source = ctx.path.ant_glob('*.c')
     defines = ['_DEFAULT_SOURCE', 'VERSION=\"1.1"', 'XINERAMA']
-    includes = ['.']
+    includes = ['.', 'PCTL']
     cflags = ['-std=c99', '-pedantic', '-Wall', '-Wno-deprecated-declarations', '-Os', '-Wno-unused-parameter', '-Wextra']
-    libs = []
+    libs = ['PCTL',]
     ctx.stlib(
 		source   = source,
 		target   = PROJECT_NAME,

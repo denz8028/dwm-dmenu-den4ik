@@ -83,7 +83,8 @@ const char *vol_perc(const char *card);
 /* wifi */
 const char *wifi_essid(const char *interface);
 const char *wifi_perc(const char *interface);
-
+/* musuic */
+const char *get_artist(const char *unused);
 char buf[1024];
 
 #define LEN(x) (sizeof(x) / sizeof((x)[0]))
