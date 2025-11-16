@@ -22,6 +22,7 @@ die(const char *fmt, ...)
 	if (fmt[0] && fmt[strlen(fmt)-1] == ':')
 		fprintf(stderr, " %s", strerror(saved_errno));
 	fputc('\n', stderr);
+
 	exit(1);
 }
 
